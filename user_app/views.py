@@ -1,5 +1,5 @@
 from django.contrib.auth import hashers
-from django.contrib.auth.models import User
+from models import CustomUser
 from django.http import Http404
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -20,8 +20,8 @@ class UserProfile(APIView):
     @staticmethod
     def get_object(user_id):
         try:
-            return User.objects.get(id=user_id)
-        except User.DoesNotExist:
+            return CustomUser.objects.get(id=user_id)
+        except CustomUser.DoesNotExist:
             raise Http404
 
     @staticmethod
@@ -68,11 +68,11 @@ class Authenticate(APIView):
         email = data.get('email')
         password = data.get('password')
         try:
-            user = User.objects.get(email=email)
+            user = CustomUser.objects.get(email=email)
             authenticated = user.check_password(password)
             if not authenticated:
                 raise exceptions.AuthenticationFailed('Bad Credentials')
-        except User.DoesNotExist:
+        except CustomUser.DoesNotExist:
             raise exceptions.AuthenticationFailed('Bad Credentials')
         token, created = Token.objects.get_or_create(user=user)
         serializer = TokenSerializer(token)

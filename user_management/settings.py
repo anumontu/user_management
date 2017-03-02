@@ -76,7 +76,7 @@ WSGI_APPLICATION = 'user_management.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'user_management',
+        'NAME': 'user_app',
         'USER': 'montu',
         'PASSWORD': 'montu',
         'HOST': 'localhost',
@@ -128,3 +128,5 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     )
 }
+
+AUTH_USER_MODEL = 'user_app.CustomUser'
