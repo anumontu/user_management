@@ -1,58 +1,58 @@
 from django.contrib.auth import hashers
-from django.http import Http404
-from rest_framework import status
-from rest_framework import viewsets
+from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
-from rest_framework.permissions import AllowAny
-from rest_framework.permissions import IsAdminUser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.generics import RetrieveAPIView, UpdateAPIView, CreateAPIView, ListAPIView
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
 from models import CustomUser
-from user_app.serializers import AuthenticationSerializer
-from user_app.serializers import TokenSerializer
-from user_app.serializers import UserSerializer
-from user_app.serializers import UserUpdateSerializer
+from user_app.serializers import AuthenticationSerializer, TokenSerializer, UserSerializer
 from . import exceptions
 from .permissions import AuthorizationPermission
 
 
-class UserProfile(viewsets.ViewSet):
+class UserList(ListAPIView):
+    permission_classes = (IsAuthenticated, IsAdminUser)
+    queryset = CustomUser.objects.all()
+    serializer_class = UserSerializer
+
+
+class UserProfile(RetrieveAPIView, UpdateAPIView):
     permission_classes = (IsAuthenticated, AuthorizationPermission)
 
-    def get_object(self, user_id):
-        self.check_object_permissions(self.request, user_id)
-        try:
-            return CustomUser.objects.get(id=user_id)
-        except CustomUser.DoesNotExist:
-            raise Http404
+    queryset = CustomUser.objects.all()
+    serializer_class = UserSerializer
+    lookup_field = 'id'
 
-    def get_user(self, request, user_id, format=None):
-        user = self.get_object(user_id)
-        user = UserSerializer(user)
-        return Response(user.data)
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        serializer.validated_data['password'] = hashers.make_password(serializer.validated_data['password'])
+        self.perform_update(serializer)
 
-    def update_user(self, request, user_id, format=None):
-        user = self.get_object(user_id)
-        serializer = UserUpdateSerializer(user, data=request.data)
-        if serializer.is_valid():
-            serializer.validated_data['password'] = hashers.make_password(serializer.validated_data['password'])
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
 
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.data)
 
 
-class CreateUser(viewsets.ViewSet):
+class CreateUser(CreateAPIView):
     permission_classes = (IsAuthenticated, IsAdminUser)
 
-    def create_user(self, request, format=None):
-        serializer = UserSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.validated_data['password'] = hashers.make_password(serializer.validated_data['password'])
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    queryset = CustomUser.objects.all()
+    serializer_class = UserSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.validated_data['password'] = hashers.make_password(serializer.validated_data['password'])
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class Authenticate(viewsets.ViewSet):

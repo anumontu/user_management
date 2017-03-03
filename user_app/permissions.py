@@ -5,6 +5,6 @@ class AuthorizationPermission(permissions.BasePermission):
     message = 'Accessing other users details not allowed.'
 
     def has_object_permission(self, request, view, obj):
-        if str(request.user.id) != obj:
+        if request.user.email != str(obj):
             return False
         return True
