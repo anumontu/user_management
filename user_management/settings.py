@@ -38,9 +38,12 @@ INSTALLED_APPS = [
     'rest_framework',
     'user_app',
     'rest_framework.authtoken',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -130,3 +133,5 @@ REST_FRAMEWORK = {
 }
 
 AUTH_USER_MODEL = 'user_app.CustomUser'
+
+CORS_ORIGIN_ALLOW_ALL = True

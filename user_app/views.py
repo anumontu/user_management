@@ -48,7 +48,7 @@ class Authenticate(viewsets.ViewSet):
             raise exceptions.AuthenticationFailed('Bad Credentials')
         token, created = Token.objects.get_or_create(user=user)
         serializer = TokenSerializer(token)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class Logout(viewsets.ViewSet):
